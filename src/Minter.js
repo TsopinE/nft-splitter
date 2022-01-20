@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import {
   connectWallet,
   getCurrentWalletConnected,
-  mintNFT,
+  setApproval,
+  transferToken,
+  retriveToken
 } from "./util/interact.js";
 
 const Minter = (props) => {
@@ -12,6 +14,10 @@ const Minter = (props) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [url, setURL] = useState("");
+
+
+  const [tokenAddress, setTokenAddress] = useState("");
+  const [tokenID, setTokenID] = useState("");
 
   useEffect(async () => {
     const { address, status } = await getCurrentWalletConnected();
@@ -53,15 +59,30 @@ const Minter = (props) => {
     setWallet(walletResponse.address);
   };
 
-  const onMintPressed = async () => {
-    const { success, status } = await mintNFT(url, name, description);
+
+  const onSetApprovalPressed = async () => {
+    const { success, status } = await setApproval(tokenAddress);
+    setStatus(status);
+  };
+
+  const onTransferPressed = async () => {
+    const { success, status } = await transferToken(tokenAddress, parseInt(tokenID));
     setStatus(status);
     if (success) {
-      setName("");
-      setDescription("");
-      setURL("");
+      setTokenAddress("");
+      setTokenID("");
     }
   };
+
+  const onRetrivePressed = async () => {
+    const { success, status } = await retriveToken(tokenAddress, parseInt(tokenID));
+    setStatus(status);
+    if (success) {
+      setTokenAddress("");
+      setTokenID("");
+    }
+  };
+
 
   return (
     <div className="Minter">
@@ -77,29 +98,29 @@ const Minter = (props) => {
       </button>
 
       <br></br>
-      <h1 id="title">NFT Minter</h1>
+      <h1 id="title">NFT Splitter</h1>
       <form>
-        <h2>🖼 Link to asset: </h2>
+        <h2> Contract address: </h2>
         <input
           type="text"
-          placeholder="e.g. https://gateway.pinata.cloud/ipfs/<hash>"
-          onChange={(event) => setURL(event.target.value)}
+          placeholder="Address"
+          onChange={(event) => setTokenAddress(event.target.value)}
         />
-        <h2>🤔 Name: </h2>
+        <h2>Token ID: </h2>
         <input
           type="text"
-          placeholder="e.g. My first NFT!"
-          onChange={(event) => setName(event.target.value)}
-        />
-        <h2>✍️ Description: </h2>
-        <input
-          type="text"
-          placeholder="e.g. Even cooler than cryptokitties ;)"
-          onChange={(event) => setDescription(event.target.value)}
+          placeholder="0"
+          onChange={(event) => setTokenID(event.target.value)}
         />
       </form>
-      <button id="mintButton" onClick={onMintPressed}>
-        Mint NFT
+      <button id="mintButton" onClick={onSetApprovalPressed}>
+        Set approval
+      </button>
+      <button id="mintButton" onClick={onTransferPressed}>
+        Transfer NFT
+      </button>
+      <button id="mintButton" onClick={onRetrivePressed}>
+        Retrive NFT
       </button>
       <p id="status" style={{ color: "red" }}>
         {status}

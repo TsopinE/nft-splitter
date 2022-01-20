@@ -2,7 +2,7 @@ import { pinJSONToIPFS } from "./pinata.js";
 require("dotenv").config();
 const alchemyKey = process.env.REACT_APP_ALCHEMY_KEY;
 const contractABI = require("../contract-abi.json");
-const contractAddress = "0xa210926a311284106eD7765c44c07A517bADE88E";
+const contractAddress = "0xD15F2f544FD9F738599955D8051D4c9193502A16";
 const { createAlchemyWeb3 } = require("@alch/alchemy-web3");
 const web3 = createAlchemyWeb3(alchemyKey);
 
@@ -88,36 +88,24 @@ async function loadContract() {
   return new web3.eth.Contract(contractABI, contractAddress);
 }
 
-export const mintNFT = async (url, name, description) => {
-  if (url.trim() == "" || name.trim() == "" || description.trim() == "") {
+export const setApproval = async (tokenContractAddress) => {
+  if (tokenContractAddress == "") {
     return {
       success: false,
-      status: "❗Please make sure all fields are completed before minting.",
+      status: "❗Please make sure all fields are completed",
     };
   }
 
   //make metadata
-  const metadata = new Object();
-  metadata.name = name;
-  metadata.image = url;
-  metadata.description = description;
 
-  const pinataResponse = await pinJSONToIPFS(metadata);
-  if (!pinataResponse.success) {
-    return {
-      success: false,
-      status: "😢 Something went wrong while uploading your tokenURI.",
-    };
-  }
-  const tokenURI = pinataResponse.pinataUrl;
 
-  window.contract = await new web3.eth.Contract(contractABI, contractAddress);
+  window.contract = await new web3.eth.Contract(contractABI, tokenContractAddress);
 
   const transactionParameters = {
-    to: contractAddress, // Required except during contract publications.
+    to: tokenContractAddress, // Required except during contract publications.
     from: window.ethereum.selectedAddress, // must match user's active address.
     data: window.contract.methods
-      .mintNFT(window.ethereum.selectedAddress, tokenURI)
+      .setApprovalForAll(contractAddress, true)
       .encodeABI(),
   };
 
@@ -139,3 +127,84 @@ export const mintNFT = async (url, name, description) => {
     };
   }
 };
+
+
+export const transferToken = async (tokenContractAddress, tokenID) => {
+  if (tokenContractAddress== "" || tokenID == "") {
+    return {
+      success: false,
+      status: "❗Please make sure all fields are completed",
+    };
+  }
+
+  //make metadata
+  window.contract = await new web3.eth.Contract(contractABI, contractAddress);
+
+  const transactionParameters = {
+    to: contractAddress, // Required except during contract publications.
+    from: window.ethereum.selectedAddress, // must match user's active address.
+    data: window.contract.methods
+      .addToken(tokenContractAddress, tokenID)
+      .encodeABI(),
+  };
+
+  try {
+    const txHash = await window.ethereum.request({
+      method: "eth_sendTransaction",
+      params: [transactionParameters],
+    });
+    return {
+      success: true,
+      status:
+        "✅ Check out your transaction on Etherscan: https://ropsten.etherscan.io/tx/" +
+        txHash,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      status: "😥 Something went wrong: " + error.message,
+    };
+  }
+};
+
+
+export const retriveToken = async (tokenContractAddress, tokenID) => {
+  if (tokenContractAddress== "" || tokenID == "") {
+    return {
+      success: false,
+      status: "❗Please make sure all fields are completed",
+    };
+  }
+
+  //make metadata
+  window.contract = await new web3.eth.Contract(contractABI, contractAddress);
+
+  const transactionParameters = {
+    to: contractAddress, // Required except during contract publications.
+    from: window.ethereum.selectedAddress, // must match user's active address.
+    data: window.contract.methods
+      .retriveToken(tokenContractAddress, tokenID)
+      .encodeABI(),
+  };
+
+  try {
+    const txHash = await window.ethereum.request({
+      method: "eth_sendTransaction",
+      params: [transactionParameters],
+    });
+    return {
+      success: true,
+      status:
+        "✅ Check out your transaction on Etherscan: https://ropsten.etherscan.io/tx/" +
+        txHash,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      status: "😥 Something went wrong: " + error.message,
+    };
+  }
+};
+
+
+
